@@ -20,4 +20,44 @@ def recommend(genre=None, mood=None, rating=None, n=5):
     if genre: d = d[d["Genre"].str.contains(genre, case=False, na=False)]
     if rating is not None: d = d[d["IMDB_Rating"] >= rating]
     if d.empty: return "no suitable movie recommendations found."
-    d, need_nonneg, out = d.sample(frac=1). reset_index(drop=True), bool(mood), []
+    d, need_nonneg, out = d.sample(frac=1).reset_index(drop=True), bool(mood), []
+    for _, r in d.iterrows():
+        ov = r.get("Overview")
+        if pd.isna(ov): continue
+        pol = TextBlob(ov).sentiment.polarity
+        if (not need_nonneg) or pol >= 0:
+            out.append((r["Series_Title"], pol))
+            if len(out) == n: break
+    return out if out else "No suitable movie recommendations found."
+
+def show(recs,name):
+    print(Fore.YELLOW + f"\n🍿 AI-Analyzed Movie Recommendation for {name}:")
+    for i, (t,p) in enumerate (recs,1):
+        print(f"{Fore.CYAN}{i}. 🎥  {t} (polarity: {p:.2f}, {senti(p)})")
+        
+def get_genre():
+    print(Fore.GREEN + "Available Genres: ", end="")
+    for i, g in enumerate(genres, 1): print(f"{Fore.CYAN}{i}. {g}")
+    print()
+    while True:
+        x = input(Fore.YELLOW + "Enter genre number or name: ").strip()
+        if x.isdigit() and 1 <= len(genres): return genres[int(x) - 1]
+        x = x.title()
+        if x in genres: return x
+        print(Fore.RED +"Invalid input. Try again.\n")
+        
+def get_rating():
+    while True:
+        x = input(Fore.YELLOW + "Enter minimun IMDB rating (7.6-9.3) or 'skip': ").strip
+        if x.lower() == "skip": return None
+        try:
+            r = float(x)
+            if 7.6 <= r <= 9.3: return r
+            print(Fore.RED + "Rating out of range. Try again.\n")
+        except ValueError:
+            print(Fore.RED + "Invalid input. Try again.\n")
+            
+print(Fore.BLUE + "🎥 Welcoe to your personal Movie Recommendation Assistant! 🎥\n")
+name = input(Fore.YELLOW + "What's your name? ").strip()
+print(f"\n {Fore.GREEN} Great to meet you, {name}!\n")
+print(Fore.BLUE + "\n 🔍 let's find the perfect movie for you!\n")

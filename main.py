@@ -4,7 +4,7 @@ from colorama import init, Fore
 
 init(autoreset=True)
 
-try: df = pd.read_csv("imb_top_1000.csv")
+try: df = pd.read_csv("imdb_top_1000.csv")
 except FileNotFoundError:
     print(Fore.RED + "Error: The file 'imdb_top_1000.csv' was not found."); raise SystemExit 
 
@@ -61,3 +61,25 @@ print(Fore.BLUE + "🎥 Welcoe to your personal Movie Recommendation Assistant! 
 name = input(Fore.YELLOW + "What's your name? ").strip()
 print(f"\n {Fore.GREEN} Great to meet you, {name}!\n")
 print(Fore.BLUE + "\n 🔍 let's find the perfect movie for you!\n")
+
+genre = get_genre()
+mood = input(Fore.YELLOW + "How do you feel today? (Describe your mood):").strip()
+print(Fore.BLUE + "\nAnalyzing mood", end="", flush=True); dots()
+mp = TextBlob(mood).sentiment.polarity
+md = "positive😊" if mp > 0 else "negative😞" if mp < 0 else "neutral😐"
+print(f"\n{Fore.GREEN}your mood is {md} (polarity: {mp:2f}).\n")
+
+rating = get_rating()
+print(f"{Fore.BLUE}\nfinding movies for {name}", end="", flush=True); dots()
+recs = recommend(genre=genre, mood=mood, rating=rating, n=5)
+print(Fore.RED + recs + "\n") if isinstance(recs,str) else show(recs,name)
+
+while True:
+    a = input (Fore.YELLOW + "\nWould you like recommendations? (yes/no): ").strip().lower()
+    if a == "no":
+        print(Fore.GREEN + f"\nEnjoy your movie picks, {name}! 🎬🍿"); break
+    if a == "yes":
+        recs = recommend(genre=genre, mood=mood, rating=rating, n=5)
+        print(Fore.RED + recs + "\n") if isinstance(recs, str) else show(recs,name)
+    else:
+        print(Fore.RED + "Invalid choice. Try again.\n")
